@@ -7,8 +7,31 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Sudoku</h1>
+    <div id="welcome-screen" class="modal">
+        <div class="modal-content">
+            <div class="logo">SUDOKU</div>
+            <div class="welcome-message">Enter your name to begin</div>
+            <input type="text" id="player-name" placeholder="Your name" maxlength="20">
+            <button id="start-game" class="glow-button">Start Game</button>
+            <div class="theme-toggle">
+                <button id="dark-mode-toggle" class="theme-button">
+                    <span class="theme-icon">🌙</span> Dark Mode
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="display:none;">
+        <div class="header">
+            <h1>Sudoku</h1>
+            <button id="theme-switcher" class="theme-button">
+                <span class="theme-icon">🌙</span>
+            </button>
+        </div>
+        <div class="player-info">
+            <span id="display-name"></span>
+            <div class="timer">Time: <span id="time">00:00</span></div>
+        </div>
         <div class="controls">
             <select id="difficulty">
                 <option value="easy">Easy</option>
@@ -16,11 +39,15 @@
                 <option value="hard">Hard</option>
             </select>
             <button id="new-game">New Game</button>
+            <button id="hint">Hint (<span id="hint-count">3</span>)</button>
             <button id="check">Check Solution</button>
-            <div class="timer">Time: <span id="time">00:00</span></div>
         </div>
         <div id="board"></div>
         <div id="message"></div>
+        <div class="scores">
+            <h3>Best Times</h3>
+            <div id="best-times"></div>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>

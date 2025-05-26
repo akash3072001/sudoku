@@ -1,27 +1,97 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const container = document.querySelector('.container');
+    const playerNameInput = document.getElementById('player-name');
+    const startGameBtn = document.getElementById('start-game');
+    const displayName = document.getElementById('display-name');
     const board = document.getElementById('board');
     const newGameBtn = document.getElementById('new-game');
+    const hintBtn = document.getElementById('hint');
+    const hintCount = document.getElementById('hint-count');
     const checkBtn = document.getElementById('check');
     const difficultySelect = document.getElementById('difficulty');
     const timeDisplay = document.getElementById('time');
     const messageDisplay = document.getElementById('message');
+    const bestTimesDisplay = document.getElementById('best-times');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    const themeSwitcher = document.getElementById('theme-switcher');
     
+    // Game state
     let sudokuBoard = [];
     let solution = [];
     let timer;
     let seconds = 0;
     let selectedCell = null;
+    let playerName = '';
+    let hintsRemaining = 3;
+    let bestTimes = {
+        easy: localStorage.getItem('bestTime-easy') || '--:--',
+        medium: localStorage.getItem('bestTime-medium') || '--:--',
+        hard: localStorage.getItem('bestTime-hard') || '--:--'
+    };
+    let darkMode = localStorage.getItem('darkMode') === 'true';
     
     // Initialize the game
     init();
     
     function init() {
-        createBoard();
-        newGame();
+        // Set initial theme
+        setDarkMode(darkMode);
+        updateThemeIcon();
+        
+        // Show welcome screen
+        welcomeScreen.style.display = 'flex';
+        container.style.display = 'none';
         
         // Event listeners
+        startGameBtn.addEventListener('click', startGame);
         newGameBtn.addEventListener('click', newGame);
+        hintBtn.addEventListener('click', giveHint);
         checkBtn.addEventListener('click', checkSolution);
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+        themeSwitcher.addEventListener('click', toggleDarkMode);
+        
+        // Keyboard support
+        playerNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') startGame();
+        });
+        
+        // Load best times
+        updateBestTimesDisplay();
+        
+        // Focus on name input
+        playerNameInput.focus();
+    }
+    
+    function startGame() {
+        playerName = playerNameInput.value.trim() || 'Player';
+        if (playerName.length > 20) playerName = playerName.substring(0, 20);
+        
+        displayName.textContent = `Player: ${playerName}`;
+        welcomeScreen.style.display = 'none';
+        container.style.display = 'block';
+        
+        createBoard();
+        newGame();
+    }
+    
+    function toggleDarkMode() {
+        darkMode = !darkMode;
+        setDarkMode(darkMode);
+        localStorage.setItem('darkMode', darkMode);
+        updateThemeIcon();
+    }
+    
+    function setDarkMode(enabled) {
+        document.body.setAttribute('data-theme', enabled ? 'dark' : 'light');
+    }
+    
+    function updateThemeIcon() {
+        const icons = document.querySelectorAll('.theme-icon');
+        icons.forEach(icon => {
+            icon.textContent = darkMode ? '☀️' : '🌙';
+        });
     }
     
     function createBoard() {
@@ -38,74 +108,73 @@ document.addEventListener('DOMContentLoaded', () => {
             input.dataset.index = i;
             
             input.addEventListener('input', handleInput);
-            input.addEventListener('focus', () => {
-                if (selectedCell) {
-                    selectedCell.classList.remove('selected');
-                }
-                selectedCell = input.parentElement;
-                selectedCell.classList.add('selected');
-            });
-            
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
-                    e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                    moveSelection(e.key, parseInt(input.dataset.index));
-                }
-            });
+            input.addEventListener('focus', handleCellFocus);
+            input.addEventListener('keydown', handleKeyDown);
             
             cell.appendChild(input);
             board.appendChild(cell);
         }
     }
     
+    function handleCellFocus() {
+        if (selectedCell) selectedCell.classList.remove('selected');
+        selectedCell = this.parentElement;
+        selectedCell.classList.add('selected');
+    }
+    
+    function handleKeyDown(e) {
+        const index = parseInt(this.dataset.index);
+        switch(e.key) {
+            case 'ArrowUp': moveSelection(index - 9); break;
+            case 'ArrowDown': moveSelection(index + 9); break;
+            case 'ArrowLeft': moveSelection(index - 1); break;
+            case 'ArrowRight': moveSelection(index + 1); break;
+        }
+    }
+    
+    function moveSelection(newIndex) {
+        if (newIndex < 0 || newIndex > 80) return;
+        
+        const newCell = document.querySelector(`.cell input[data-index="${newIndex}"]`);
+        if (newCell && !newCell.readOnly) newCell.focus();
+    }
+    
     function newGame() {
-        // Reset timer
+        // Reset game state
         clearInterval(timer);
         seconds = 0;
         updateTimer();
         timer = setInterval(updateTimer, 1000);
         
-        // Clear message
+        hintsRemaining = 3;
+        hintCount.textContent = hintsRemaining;
+        hintBtn.disabled = false;
+        
         messageDisplay.textContent = '';
         messageDisplay.className = '';
         
         // Generate new puzzle
-        const difficulty = difficultySelect.value;
-        generatePuzzle(difficulty);
+        generatePuzzle(difficultySelect.value);
     }
     
     function generatePuzzle(difficulty) {
-        // Generate a solved Sudoku board
         solution = generateSolvedBoard();
-        
-        // Create a copy for the puzzle
         sudokuBoard = JSON.parse(JSON.stringify(solution));
         
-        // Remove numbers based on difficulty
-        let cellsToRemove;
-        switch(difficulty) {
-            case 'easy': cellsToRemove = 40; break;
-            case 'medium': cellsToRemove = 50; break;
-            case 'hard': cellsToRemove = 60; break;
-            default: cellsToRemove = 40;
-        }
+        const cellsToRemove = {
+            easy: 40,
+            medium: 50,
+            hard: 60
+        }[difficulty] || 40;
         
         removeNumbers(sudokuBoard, cellsToRemove);
-        
-        // Display the puzzle
         displayBoard();
     }
     
     function generateSolvedBoard() {
-        // Create empty board
         const board = Array(9).fill().map(() => Array(9).fill(0));
-        
-        // Fill diagonal 3x3 boxes first
         fillDiagonalBoxes(board);
-        
-        // Solve the rest of the board
         solveSudoku(board);
-        
         return board;
     }
     
@@ -116,9 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function fillBox(board, row, col) {
-        const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-        shuffleArray(nums);
-        
+        const nums = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
         let index = 0;
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
@@ -132,19 +199,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!emptyCell) return true;
         
         const [row, col] = emptyCell;
-        
         for (let num = 1; num <= 9; num++) {
             if (isValid(board, row, col, num)) {
                 board[row][col] = num;
-                
-                if (solveSudoku(board)) {
-                    return true;
-                }
-                
+                if (solveSudoku(board)) return true;
                 board[row][col] = 0;
             }
         }
-        
         return false;
     }
     
@@ -152,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
         while (count > 0) {
             const row = Math.floor(Math.random() * 9);
             const col = Math.floor(Math.random() * 9);
-            
             if (board[row][col] !== 0) {
                 board[row][col] = 0;
                 count--;
@@ -162,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function displayBoard() {
         const cells = document.querySelectorAll('.cell input');
-        
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
                 const index = i * 9 + j;
@@ -172,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.value = value === 0 ? '' : value;
                 cell.readOnly = value !== 0;
                 cell.parentElement.className = value !== 0 ? 'cell given' : 'cell';
-                cell.parentElement.classList.remove('error', 'correct');
+                cell.parentElement.classList.remove('error', 'correct', 'selected');
             }
         }
     }
@@ -182,14 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const index = parseInt(input.dataset.index);
         const row = Math.floor(index / 9);
         const col = index % 9;
-        let value = input.value;
+        const value = input.value;
         
-        // Validate input
         if (value === '' || (value >= '1' && value <= '9')) {
             sudokuBoard[row][col] = value === '' ? 0 : parseInt(value);
             input.parentElement.classList.remove('error');
             
-            // Check if correct
             if (value !== '' && value == solution[row][col]) {
                 input.parentElement.classList.add('correct');
             } else {
@@ -201,10 +258,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    function giveHint() {
+        if (hintsRemaining <= 0) {
+            showMessage('No hints remaining!', 'warning');
+            return;
+        }
+        
+        if (!selectedCell) {
+            showMessage('Please select a cell first!', 'warning');
+            return;
+        }
+        
+        const index = parseInt(selectedCell.dataset.index);
+        const row = Math.floor(index / 9);
+        const col = index % 9;
+        
+        if (sudokuBoard[row][col] !== 0) {
+            showMessage('This cell already has a value!', 'warning');
+            return;
+        }
+        
+        const input = selectedCell.querySelector('input');
+        input.value = solution[row][col];
+        sudokuBoard[row][col] = solution[row][col];
+        input.readOnly = true;
+        selectedCell.classList.add('correct');
+        
+        hintsRemaining--;
+        hintCount.textContent = hintsRemaining;
+        if (hintsRemaining <= 0) hintBtn.disabled = true;
+        
+        showMessage(`Hint used! ${hintsRemaining} hint${hintsRemaining !== 1 ? 's' : ''} remaining`, 'success');
+    }
+    
     function checkSolution() {
         let isComplete = true;
         let isCorrect = true;
-        
         const cells = document.querySelectorAll('.cell input');
         
         for (let i = 0; i < 9; i++) {
@@ -231,16 +320,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (!isComplete) {
-            messageDisplay.textContent = 'Puzzle is not complete!';
-            messageDisplay.className = 'warning';
+            showMessage('Puzzle is not complete!', 'warning');
         } else if (isCorrect) {
-            messageDisplay.textContent = 'Congratulations! Puzzle solved correctly!';
-            messageDisplay.className = 'success';
+            showMessage('Congratulations! Puzzle solved correctly!', 'success');
             clearInterval(timer);
+            updateBestTimes();
         } else {
-            messageDisplay.textContent = 'There are errors in your solution.';
-            messageDisplay.className = 'error';
+            showMessage('There are errors in your solution.', 'error');
         }
+    }
+    
+    function showMessage(text, type) {
+        messageDisplay.textContent = text;
+        messageDisplay.className = type;
     }
     
     function updateTimer() {
@@ -250,69 +342,52 @@ document.addEventListener('DOMContentLoaded', () => {
         timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
     
-    function moveSelection(direction, currentIndex) {
-        let newIndex;
+    function updateBestTimes() {
+        const difficulty = difficultySelect.value;
+        const currentTime = timeDisplay.textContent;
+        const currentBest = bestTimes[difficulty];
         
-        switch(direction) {
-            case 'ArrowUp':
-                newIndex = currentIndex - 9;
-                if (newIndex < 0) newIndex = currentIndex;
-                break;
-            case 'ArrowDown':
-                newIndex = currentIndex + 9;
-                if (newIndex > 80) newIndex = currentIndex;
-                break;
-            case 'ArrowLeft':
-                newIndex = currentIndex - 1;
-                if (Math.floor(newIndex / 9) !== Math.floor(currentIndex / 9)) newIndex = currentIndex;
-                break;
-            case 'ArrowRight':
-                newIndex = currentIndex + 1;
-                if (Math.floor(newIndex / 9) !== Math.floor(currentIndex / 9)) newIndex = currentIndex;
-                break;
-            default:
-                newIndex = currentIndex;
+        if (currentBest === '--:--' || 
+            parseInt(currentTime.replace(':', '')) < parseInt(currentBest.replace(':', ''))) {
+            bestTimes[difficulty] = currentTime;
+            localStorage.setItem(`bestTime-${difficulty}`, currentTime);
+            updateBestTimesDisplay();
+            showMessage(`New best time for ${difficulty}! ${currentTime}`, 'success');
         }
-        
-        const newCell = document.querySelector(`.cell input[data-index="${newIndex}"]`);
-        if (newCell && !newCell.readOnly) {
-            newCell.focus();
-        }
+    }
+    
+    function updateBestTimesDisplay() {
+        bestTimesDisplay.innerHTML = `
+            <div class="best-time"><strong>Easy:</strong> ${bestTimes.easy}</div>
+            <div class="best-time"><strong>Medium:</strong> ${bestTimes.medium}</div>
+            <div class="best-time"><strong>Hard:</strong> ${bestTimes.hard}</div>
+        `;
     }
     
     // Helper functions
     function findEmptyCell(board) {
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
-                if (board[i][j] === 0) {
-                    return [i, j];
-                }
+                if (board[i][j] === 0) return [i, j];
             }
         }
         return null;
     }
     
     function isValid(board, row, col, num) {
-        // Check row
-        for (let j = 0; j < 9; j++) {
-            if (board[row][j] === num) return false;
-        }
-        
-        // Check column
+        // Check row and column
         for (let i = 0; i < 9; i++) {
-            if (board[i][col] === num) return false;
+            if (board[row][i] === num || board[i][col] === num) return false;
         }
         
         // Check 3x3 box
         const boxRow = Math.floor(row / 3) * 3;
         const boxCol = Math.floor(col / 3) * 3;
-        
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
                 if (board[boxRow + i][boxCol + j] === num) return false;
             }
         }
-        
         return true;
     }
     
