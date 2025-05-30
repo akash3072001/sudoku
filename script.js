@@ -51,6 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
         checkBtn.addEventListener('click', checkSolution);
         darkModeToggle.addEventListener('click', toggleDarkMode);
         themeSwitcher.addEventListener('click', toggleDarkMode);
+        difficultySelect.addEventListener('change', () => {
+            newGame();
+        });
         
         // Keyboard support
         playerNameInput.addEventListener('keypress', (e) => {
@@ -65,16 +68,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function startGame() {
-        playerName = playerNameInput.value.trim() || 'Player';
-        if (playerName.length > 20) playerName = playerName.substring(0, 20);
-        
+        const name = playerNameInput.value.trim();
+
+        if (name === '') {
+            showMessage('Please enter your name to start the game.', 'warning');
+            playerNameInput.focus();
+            return; // Stop the game from starting
+        }
+
+        playerName = name.length > 20 ? name.substring(0, 20) : name;
         displayName.textContent = `Player: ${playerName}`;
+
         welcomeScreen.style.display = 'none';
         container.style.display = 'block';
-        
+
         createBoard();
         newGame();
     }
+
     
     function toggleDarkMode() {
         darkMode = !darkMode;
@@ -120,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedCell) selectedCell.classList.remove('selected');
         selectedCell = this.parentElement;
         selectedCell.classList.add('selected');
+        
     }
     
     function handleKeyDown(e) {
@@ -242,20 +254,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = Math.floor(index / 9);
         const col = index % 9;
         const value = input.value;
-        
         if (value === '' || (value >= '1' && value <= '9')) {
             sudokuBoard[row][col] = value === '' ? 0 : parseInt(value);
-            input.parentElement.classList.remove('error');
-            
-            if (value !== '' && value == solution[row][col]) {
-                input.parentElement.classList.add('correct');
-            } else {
+            if (value !== '' && value != solution[row][col]) {
+                input.parentElement.classList.add('error');
                 input.parentElement.classList.remove('correct');
+            } else {
+                input.parentElement.classList.remove('error');
+                if (value !== '' && value == solution[row][col]) {
+                    input.parentElement.classList.add('correct');
+                }
             }
         } else {
             input.value = '';
             sudokuBoard[row][col] = 0;
         }
+      /*  input.blur();
+        input.focus();
+        input.dispatchEvent(new Event('input'));   */
     }
     
     function giveHint() {
@@ -295,30 +311,34 @@ document.addEventListener('DOMContentLoaded', () => {
         let isComplete = true;
         let isCorrect = true;
         const cells = document.querySelectorAll('.cell input');
-        
+
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
                 const index = i * 9 + j;
                 const cell = cells[index];
-                
+
                 if (cell.value === '') {
                     isComplete = false;
                     cell.parentElement.classList.remove('error', 'correct');
                     continue;
                 }
-                
+
                 const value = parseInt(cell.value);
                 if (value !== solution[i][j]) {
                     isCorrect = false;
                     cell.parentElement.classList.add('error');
                     cell.parentElement.classList.remove('correct');
                 } else {
-                    cell.parentElement.classList.remove('error');
-                    cell.parentElement.classList.add('correct');
+                    if (cell.readOnly) {
+                        cell.parentElement.classList.remove('correct');
+                    } else {
+                        cell.parentElement.classList.add('correct');
+                        cell.parentElement.classList.remove('error');
+                    }
                 }
             }
         }
-        
+
         if (!isComplete) {
             showMessage('Puzzle is not complete!', 'warning');
         } else if (isCorrect) {
@@ -333,6 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showMessage(text, type) {
         messageDisplay.textContent = text;
         messageDisplay.className = type;
+        messageDisplay.style.display = 'block'; // Ensure it's visible
     }
     
     function updateTimer() {
