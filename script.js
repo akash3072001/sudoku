@@ -114,7 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
             cell.dataset.index = i;
             
             const input = document.createElement('input');
-            input.type = 'text';
+            input.type = 'tel';
+            input.pattern = '[1-9]';
+            input.inputMode = 'numeric';
             input.maxLength = 1;
             input.dataset.index = i;
             
