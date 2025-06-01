@@ -5,12 +5,12 @@
     --secondary-color: #218838;
     --container-bg: #ffffff;
     --cell-bg: #ffffff;
-    --given-cell-bg: #e9ecef;
-    --correct-cell-bg: #d4edda;
-    --error-cell-bg: #f8d7da;
+    --given-cell-bg: #ebebeb;
+    --correct-cell-bg: #aefbc0;
+    --error-cell-bg: #f86d79;
     --selected-cell-bg: #e7f5ff;
     --border-color: #495057;
-    --light-border: #dee2e6;
+    --light-border: #ced0d2;
     --message-success: #d4edda;
     --message-error: #f8d7da;
     --message-warning: #fff3cd;
@@ -266,6 +266,11 @@ select {
     background-color: var(--selected-cell-bg);
 }
 
+.cell input {
+  caret-color: transparent;
+}
+
+
 .cell {
     border-right: 1px solid var(--light-border);
     border-bottom: 1px solid var(--light-border);
@@ -291,6 +296,8 @@ select {
 .cell.given {
     background-color: var(--given-cell-bg);
     font-weight: bold;
+    pointer-events: none;
+    user-select: none;
 }
 
 .cell.correct {
