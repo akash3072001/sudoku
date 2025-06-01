@@ -56,12 +56,6 @@ body {
     justify-content: center;
     align-items: center;
     padding: 20px;
-    /* Change from flex-center to flex-start to keep content at top */
-    justify-content: flex-start;
-    /* Make sure body can scroll */
-    overflow: auto;
-    /* Add some padding at the bottom for mobile keyboards */
-    padding-bottom: 20px;
 }
 
 .modal {
@@ -171,7 +165,6 @@ body {
     max-width: 500px;
     padding: 20px;
     transition: all 0.3s;
-    margin-top: 20px;
 }
 
 .header {
