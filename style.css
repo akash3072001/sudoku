@@ -135,6 +135,15 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.secondary-button {
+    background-color: #6c757d;
+    margin-top: 10px;
+}
+
+.secondary-button:hover {
+    background-color: #5a6268;
+}
+
 .theme-button {
     background-color: transparent;
     border: none;
@@ -267,9 +276,8 @@ select {
 }
 
 .cell input {
-  caret-color: transparent;
+    caret-color: transparent;
 }
-
 
 .cell {
     border-right: 1px solid var(--light-border);
@@ -311,6 +319,42 @@ select {
 .cell.selected {
     background-color: var(--selected-cell-bg);
     box-shadow: inset 0 0 0 2px var(--primary-color);
+}
+
+.number-pad {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 15px;
+    display: none;
+}
+
+.number-btn {
+    aspect-ratio: 1/1;
+    font-size: 1.2rem;
+    font-weight: bold;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.number-btn:hover {
+    background-color: var(--secondary-color);
+    transform: scale(1.05);
+}
+
+.clear-btn {
+    grid-column: span 5;
+    aspect-ratio: unset;
+    padding: 10px;
+    background-color: #dc3545;
+}
+
+.clear-btn:hover {
+    background-color: #c82333;
 }
 
 #message {
@@ -369,6 +413,28 @@ select {
     color: var(--primary-color);
 }
 
+.completion-stats {
+    margin: 20px 0;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.completion-stats p {
+    margin: 10px 0;
+}
+
+.completion-stats span {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+#new-best {
+    color: var(--primary-color);
+    font-weight: bold;
+    margin: 15px 0;
+    animation: pulse 1.5s infinite;
+}
+
 @keyframes correctAnimation {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
@@ -380,6 +446,12 @@ select {
     25% { transform: translateX(-5px); }
     50% { transform: translateX(5px); }
     75% { transform: translateX(-5px); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
 .cell.correct {
@@ -405,6 +477,10 @@ select {
     
     .cell input {
         font-size: 1rem;
+    }
+    
+    .number-pad {
+        display: grid;
     }
 }
 
