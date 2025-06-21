@@ -51,13 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     function init() {
+        // Add this line to detect mobile
+        state.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         setDarkMode(state.darkMode);
         updateThemeIcon();
-        
+
         // Show welcome screen
         elements.welcomeScreen.style.display = 'flex';
         elements.container.style.display = 'none';
-        
+
         setupEventListeners();
         updateBestTimesDisplay();
         elements.playerNameInput.focus();
@@ -74,12 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.playAgainBtn.addEventListener('click', playAgain);
         elements.newDifficultyBtn.addEventListener('click', newDifficulty);
         elements.difficultySelect.addEventListener('change', newGame);
-        
+
         // Keyboard events
         elements.playerNameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') startGame();
         });
-        
+
         // Number pad events
         elements.numberButtons.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -137,21 +140,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createBoard() {
         elements.board.innerHTML = '';
-        
+
         for (let i = 0; i < 81; i++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.index = i;
-            
+
             const input = document.createElement('input');
             input.type = 'text';
             input.maxLength = 1;
             input.dataset.index = i;
-            
+
             input.addEventListener('input', handleInput);
             input.addEventListener('focus', handleCellFocus);
             input.addEventListener('keydown', handleKeyDown);
-            
+
             cell.appendChild(input);
             elements.board.appendChild(cell);
         }
@@ -163,17 +166,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         state.selectedCell = e.target.parentElement;
         state.selectedCell.classList.add('selected');
+
+        // Prevent keyboard from opening on mobile
+        if (state.isMobile) {
+            e.target.blur();
+        }
     }
 
     function handleKeyDown(e) {
         const index = parseInt(e.target.dataset.index);
         const key = e.key;
-        
+
         // Arrow key navigation
         if (key.startsWith('Arrow')) {
             e.preventDefault();
             let newIndex;
-            switch(key) {
+            switch (key) {
                 case 'ArrowUp': newIndex = index - 9; break;
                 case 'ArrowDown': newIndex = index + 9; break;
                 case 'ArrowLeft': newIndex = index - 1; break;
@@ -195,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function moveSelection(newIndex) {
         if (newIndex < 0 || newIndex > 80) return;
-        
+
         const newCell = document.querySelector(`.cell input[data-index="${newIndex}"]`);
         if (newCell && !newCell.readOnly) {
             newCell.focus();
@@ -208,14 +216,14 @@ document.addEventListener('DOMContentLoaded', () => {
         state.seconds = 0;
         updateTimer();
         state.timer = setInterval(updateTimer, 1000);
-        
+
         state.hintsRemaining = 3;
         state.hintsUsed = 0;
         elements.hintCount.textContent = state.hintsRemaining;
         elements.hintBtn.disabled = false;
-        
+
         clearMessage();
-        
+
         // Generate new puzzle
         generatePuzzle(elements.difficultySelect.value);
     }
@@ -223,13 +231,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function generatePuzzle(difficulty) {
         state.solution = generateSolvedBoard();
         state.sudokuBoard = JSON.parse(JSON.stringify(state.solution));
-        
+
         const cellsToRemove = {
             easy: 40,
             medium: 50,
             hard: 60
         }[difficulty] || 40;
-        
+
         removeNumbers(state.sudokuBoard, cellsToRemove);
         displayBoard();
     }
@@ -260,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function solveSudoku(board) {
         const emptyCell = findEmptyCell(board);
         if (!emptyCell) return true;
-        
+
         const [row, col] = emptyCell;
         for (let num = 1; num <= 9; num++) {
             if (isValid(board, row, col, num)) {
@@ -291,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const index = i * 9 + j;
                 const cell = cells[index];
                 const value = state.sudokuBoard[i][j];
-                
+
                 cell.value = value === 0 ? '' : value;
                 cell.readOnly = value !== 0;
                 cell.parentElement.className = value !== 0 ? 'cell given' : 'cell';
@@ -306,11 +314,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = Math.floor(index / 9);
         const col = index % 9;
         const value = input.value;
-        
+
         // Validate input
         if (value === '' || /^[1-9]$/.test(value)) {
             state.sudokuBoard[row][col] = value === '' ? 0 : parseInt(value);
-            
+
             // Check if correct
             if (value !== '' && value != state.solution[row][col]) {
                 input.parentElement.classList.add('error');
@@ -325,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
             input.value = '';
             state.sudokuBoard[row][col] = 0;
         }
-        
+
         // Auto-check if board is complete
         if (isBoardComplete()) {
             checkSolution();
@@ -346,32 +354,32 @@ document.addEventListener('DOMContentLoaded', () => {
             showMessage('No hints remaining!', 'warning');
             return;
         }
-        
+
         if (!state.selectedCell) {
             showMessage('Please select a cell first!', 'warning');
             return;
         }
-        
+
         const index = parseInt(state.selectedCell.dataset.index);
         const row = Math.floor(index / 9);
         const col = index % 9;
-        
+
         if (state.sudokuBoard[row][col] !== 0) {
             showMessage('This cell already has a value!', 'warning');
             return;
         }
-        
+
         const input = state.selectedCell.querySelector('input');
         input.value = state.solution[row][col];
         state.sudokuBoard[row][col] = state.solution[row][col];
         input.readOnly = true;
         state.selectedCell.classList.add('correct');
-        
+
         state.hintsRemaining--;
         state.hintsUsed++;
         elements.hintCount.textContent = state.hintsRemaining;
         if (state.hintsRemaining <= 0) elements.hintBtn.disabled = true;
-        
+
         showMessage(`Hint used! ${state.hintsRemaining} hint${state.hintsRemaining !== 1 ? 's' : ''} remaining`, 'success');
     }
 
@@ -423,15 +431,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const difficulty = elements.difficultySelect.value;
         const currentTime = elements.timeDisplay.textContent;
         const currentBest = state.bestTimes[difficulty];
-        
+
         elements.completedDifficulty.textContent = difficulty;
         elements.completedTime.textContent = currentTime;
         elements.completedHints.textContent = 3 - state.hintsRemaining;
-        
+
         // Check for new best time
-        const isNewBest = currentBest === '--:--' || 
-                        parseInt(currentTime.replace(':', '')) < parseInt(currentBest.replace(':', ''));
-        
+        const isNewBest = currentBest === '--:--' ||
+            parseInt(currentTime.replace(':', '')) < parseInt(currentBest.replace(':', ''));
+
         if (isNewBest) {
             state.bestTimes[difficulty] = currentTime;
             localStorage.setItem(`bestTime-${difficulty}`, currentTime);
@@ -440,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             elements.newBest.style.display = 'none';
         }
-        
+
         elements.completionModal.style.display = 'flex';
     }
 
@@ -467,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.messageDisplay.textContent = text;
         elements.messageDisplay.className = type;
         elements.messageDisplay.style.display = 'block';
-        
+
         // Auto-hide message after 3 seconds
         if (type !== 'error') {
             setTimeout(clearMessage, 3000);
@@ -510,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < 9; i++) {
             if (board[row][i] === num || board[i][col] === num) return false;
         }
-        
+
         // Check 3x3 box
         const boxRow = Math.floor(row / 3) * 3;
         const boxCol = Math.floor(col / 3) * 3;
