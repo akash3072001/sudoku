@@ -206,8 +206,7 @@ h1 {
     margin-bottom: 15px;
 }
 
-button,
-select {
+button, select {
     padding: 10px;
     border-radius: 6px;
     border: none;
@@ -323,56 +322,37 @@ select {
 }
 
 .number-pad {
-    display: none;
-    /* Hidden by default */
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
-    /* Reduced gap */
-    margin-top: 10px;
-}
-
-.number-btn {
-    aspect-ratio: 1/1;
-    font-size: 0.8rem;
-    /* Smaller font */
-    padding: 2px;
-    /* Reduced padding */
-    min-height: 30px;
-    /* Fixed height */
-    max-height: 36px;
-    /* Maximum height */
-    border-radius: 4px;
-    /* Slightly rounded */
-}
-
-.clear-btn {
-    grid-column: span 5;
-    aspect-ratio: unset;
-    padding: 5px;
-    min-height: 30px;
-    max-height: 36px;
-    font-size: 0.8rem;
+    display: none; /* Hide by default for all devices */
 }
 
 @media (max-width: 600px) {
     .number-pad {
         display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+        margin-top: 10px;
     }
-
-    /* Make the board slightly smaller to fit buttons */
-    #board {
-        max-width: 100%;
-        aspect-ratio: 1/1;
-    }
-
-    /* Smaller cell text */
-    .cell input {
+    
+    .number-btn {
         font-size: 0.9rem;
+        padding: 5px;
+        min-height: 30px;
     }
-
-    /* Prevent keyboard popup */
+    
+    .clear-btn {
+        padding: 5px;
+        min-height: 30px;
+    }
+    
+    /* Prevent mobile keyboard from appearing */
     .cell input {
-        caret-color: transparent;
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* IE10+/Edge */
+        user-select: none; /* Standard */
+    }
+    
+    .cell input:focus {
         pointer-events: none;
     }
 }
@@ -484,51 +464,22 @@ select {
 }
 
 @keyframes correctAnimation {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
 @keyframes incorrectAnimation {
-
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    25% {
-        transform: translateX(-5px);
-    }
-
-    50% {
-        transform: translateX(5px);
-    }
-
-    75% {
-        transform: translateX(-5px);
-    }
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
 }
 
 @keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
 .cell.correct {
@@ -543,19 +494,19 @@ select {
     .modal-content {
         padding: 20px;
     }
-
+    
     .controls {
         grid-template-columns: 1fr;
     }
-
+    
     #best-times {
         grid-template-columns: 1fr;
     }
-
+    
     .cell input {
         font-size: 1rem;
     }
-
+    
     .number-pad {
         display: grid;
     }
@@ -565,7 +516,7 @@ select {
     .logo {
         font-size: 2rem;
     }
-
+    
     .player-info {
         flex-direction: column;
         gap: 5px;
